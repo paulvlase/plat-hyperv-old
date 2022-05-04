@@ -29,14 +29,19 @@
 #ifndef _VMBUS_VAR_H_
 #define _VMBUS_VAR_H_
 
-#include <sys/param.h>
-#include <sys/kernel.h>
-#include <sys/taskqueue.h>
-#include <sys/rman.h>
+#include <uk/plat/lcpu.h>
+#include <uk/thread.h>
 
-#include <dev/hyperv/include/hyperv_busdma.h>
-#include <dev/pci/pcivar.h>
-#include <dev/pci/pcib_private.h>
+#include <hyperv/bsd_layer.h>
+
+// #include <sys/param.h>
+// #include <sys/kernel.h>
+// #include <sys/taskqueue.h>
+// #include <sys/rman.h>
+
+// #include <dev/hyperv/include/hyperv_busdma.h>
+// #include <dev/pci/pcivar.h>
+// #include <dev/pci/pcib_private.h>
 
 /*
  * NOTE: DO NOT CHANGE THIS.
@@ -69,21 +74,24 @@ typedef void		(*vmbus_chanmsg_proc_t)(struct vmbus_softc *,
 struct vmbus_pcpu_data {
 	u_long			*intr_cnt;	/* Hyper-V interrupt counter */
 	struct vmbus_message	*message;	/* shared messages */
+	__phys_addr message_paddr;
 	uint32_t		vcpuid;		/* virtual cpuid */
 	int			event_flags_cnt;/* # of event flags */
 	struct vmbus_evtflags	*event_flags;	/* event flags from host */
+	__phys_addr event_flags_paddr;
 
-	/* Rarely used fields */
-	struct hyperv_dma	message_dma;	/* busdma glue */
-	struct hyperv_dma	event_flags_dma;/* busdma glue */
-	struct taskqueue	*event_tq;	/* event taskq */
-	struct taskqueue	*message_tq;	/* message taskq */
-	struct task		message_task;	/* message task */
-} __aligned(CACHE_LINE_SIZE);
+// 	/* Rarely used fields */
+// 	struct taskqueue	*event_tq;	/* event taskq */
+	struct uk_thread *event_thread;
+// 	struct taskqueue	*message_tq;	/* message taskq */
+	struct uk_thread *message_thread;
 
-#if __FreeBSD_version < 1100000
-typedef u_long rman_res_t;
-#endif
+// 	struct task		message_task;	/* message task */
+} __align(CACHE_LINE_SIZE);
+
+// #if __FreeBSD_version < 1100000
+// typedef u_long rman_res_t;
+// #endif
 
 struct vmbus_softc {
 	void			(*vmbus_event_proc)(struct vmbus_softc *, int);
@@ -102,6 +110,7 @@ struct vmbus_softc {
 	 */
 
 	device_t		vmbus_dev;
+    struct uk_alloc *a;
 	int			vmbus_idtvec;
 	uint32_t		vmbus_flags;	/* see VMBUS_FLAG_ */
 	uint32_t		vmbus_version;
@@ -109,32 +118,36 @@ struct vmbus_softc {
 
 	/* Shared memory for vmbus_{rx,tx}_evtflags */
 	void			*vmbus_evtflags;
-	struct hyperv_dma	vmbus_evtflags_dma;
+	__phys_addr			vmbus_evtflags_paddr;
 
 	void			*vmbus_mnf1;	/* monitored by VM, unused */
-	struct hyperv_dma	vmbus_mnf1_dma;
-	struct hyperv_dma	vmbus_mnf2_dma;
+	__phys_addr			vmbus_mnf1_paddr;
+	__phys_addr			vmbus_mnf2_paddr;
 
 	bool			vmbus_scandone;
-	struct task		vmbus_scandone_task;
+// 	struct task		vmbus_scandone_task;
 
-	struct taskqueue	*vmbus_devtq;	/* for dev attach/detach */
-	struct taskqueue	*vmbus_subchtq;	/* for sub-chan attach/detach */
+// 	struct taskqueue	*vmbus_devtq;	/* for dev attach/detach */
+	struct uk_thread *vmbus_subch_thread;
+// 	struct taskqueue	*vmbus_subchtq;	/* for sub-chan attach/detach */
+	struct uk_thread *vmbus_dev_thread;
+	/**< Waiting queue for notifying incoming xs replies */
+	struct uk_waitq waitq;
 
 	/* Primary channels */
 	struct mtx		vmbus_prichan_lock;
-	TAILQ_HEAD(, vmbus_channel) vmbus_prichans;
+	TAILQ_HEAD(, struct vmbus_channel) vmbus_prichans;
 
 	/* Complete channel list */
 	struct mtx		vmbus_chan_lock;
-	TAILQ_HEAD(, vmbus_channel) vmbus_chans;
+	TAILQ_HEAD(, struct vmbus_channel) vmbus_chans;
 
-	struct intr_config_hook	vmbus_intrhook;
+// 	struct intr_config_hook	vmbus_intrhook;
 
-#ifdef NEW_PCIB
-	/* The list of usable MMIO ranges for PCIe pass-through */
-	struct pcib_host_resources vmbus_mmio_res;
-#endif
+// #ifdef NEW_PCIB
+// 	/* The list of usable MMIO ranges for PCIe pass-through */
+// 	struct pcib_host_resources vmbus_mmio_res;
+// #endif
 };
 
 #define VMBUS_FLAG_ATTACHED	0x0001	/* vmbus was attached */
@@ -143,16 +156,17 @@ struct vmbus_softc {
 #define VMBUS_PCPU_GET(sc, field, cpu)	(sc)->vmbus_pcpu[(cpu)].field
 #define VMBUS_PCPU_PTR(sc, field, cpu)	&(sc)->vmbus_pcpu[(cpu)].field
 
-struct vmbus_channel;
+// struct vmbus_channel;
 struct trapframe;
-struct vmbus_message;
-struct vmbus_msghc;
+// struct vmbus_message;
+// struct vmbus_msghc;
 
-void		vmbus_handle_intr(struct trapframe *);
+// void		vmbus_handle_intr(struct trapframe *);
+void		vmbus_handle_intr(void);
 int		vmbus_add_child(struct vmbus_channel *);
 int		vmbus_delete_child(struct vmbus_channel *);
-void		vmbus_et_intr(struct trapframe *);
-uint32_t	vmbus_gpadl_alloc(struct vmbus_softc *);
+// void		vmbus_et_intr(struct trapframe *);
+// uint32_t	vmbus_gpadl_alloc(struct vmbus_softc *);
 
 struct vmbus_msghc *
 		vmbus_msghc_get(struct vmbus_softc *, size_t);
@@ -160,14 +174,14 @@ void		vmbus_msghc_put(struct vmbus_softc *, struct vmbus_msghc *);
 void		*vmbus_msghc_dataptr(struct vmbus_msghc *);
 int		vmbus_msghc_exec_noresult(struct vmbus_msghc *);
 int		vmbus_msghc_exec(struct vmbus_softc *, struct vmbus_msghc *);
-void		vmbus_msghc_exec_cancel(struct vmbus_softc *,
-		    struct vmbus_msghc *);
+// void		vmbus_msghc_exec_cancel(struct vmbus_softc *,
+// 		    struct vmbus_msghc *);
 const struct vmbus_message *
 		vmbus_msghc_wait_result(struct vmbus_softc *,
 		    struct vmbus_msghc *);
-const struct vmbus_message *
-		vmbus_msghc_poll_result(struct vmbus_softc *,
-		    struct vmbus_msghc *);
+// const struct vmbus_message *
+// 		vmbus_msghc_poll_result(struct vmbus_softc *,
+// 		    struct vmbus_msghc *);
 void		vmbus_msghc_wakeup(struct vmbus_softc *,
 		    const struct vmbus_message *);
 void		vmbus_msghc_reset(struct vmbus_msghc *, size_t);

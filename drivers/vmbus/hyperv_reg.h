@@ -29,8 +29,9 @@
 #ifndef _HYPERV_REG_H_
 #define _HYPERV_REG_H_
 
-#include <sys/param.h>
-#include <sys/systm.h>
+#include <uk/assert.h>
+// #include <sys/param.h>
+// #include <sys/systm.h>
 
 /*
  * Hyper-V Synthetic MSRs
@@ -49,6 +50,8 @@
 	((0x01ULL << MSR_HV_GUESTID_OSTYPE_SHIFT) | MSR_HV_GUESTID_OPENSRC)
 #define MSR_HV_GUESTID_OSTYPE_FREEBSD	\
 	((0x02ULL << MSR_HV_GUESTID_OSTYPE_SHIFT) | MSR_HV_GUESTID_OPENSRC)
+#define MSR_HV_GUESTID_OSTYPE_UNIKRAFT	\
+	((0x05ULL << MSR_HV_GUESTID_OSTYPE_SHIFT) | MSR_HV_GUESTID_OPENSRC)
 
 #define MSR_HV_HYPERCALL		0x40000001
 #define MSR_HV_HYPERCALL_ENABLE		0x0001ULL
@@ -182,7 +185,7 @@ struct hypercall_postmsg_in {
 	uint32_t	hc_dsize;
 	uint8_t		hc_data[HYPERCALL_POSTMSGIN_DSIZE_MAX];
 } __packed;
-CTASSERT(sizeof(struct hypercall_postmsg_in) == HYPERCALL_POSTMSGIN_SIZE);
+UK_CTASSERT(sizeof(struct hypercall_postmsg_in) == HYPERCALL_POSTMSGIN_SIZE);
 
 /*
  * HYPERCALL_SIGNAL_EVENT

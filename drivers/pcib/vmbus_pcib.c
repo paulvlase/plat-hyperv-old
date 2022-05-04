@@ -95,7 +95,7 @@ init_completion(struct completion *c)
 static void
 free_completion(struct completion *c)
 {
-	mtx_destroy(&c->lock);
+	// mtx_destroy(&c->lock);
 }
 
 static void
@@ -112,7 +112,8 @@ wait_for_completion(struct completion *c)
 {
 	mtx_lock(&c->lock);
 	while (c->done == 0)
-		mtx_sleep(c, &c->lock, 0, "hvwfc", 0);
+		// mtx_sleep(c, &c->lock, 0, "hvwfc", 0);
+		mtx_sleep(c->wq, c->done == 0, &c->lock, 0, "hvwfc", 0);
 	c->done--;
 	mtx_unlock(&c->lock);
 }
@@ -128,7 +129,8 @@ wait_for_completion_timeout(struct completion *c, int timeout)
 	mtx_lock(&c->lock);
 
 	if (c->done == 0)
-		mtx_sleep(c, &c->lock, 0, "hvwfc", timeout);
+		//mtx_sleep(c, &c->lock, 0, "hvwfc", timeout);
+		mtx_sleep(c->wq, c->done == 0, &c->lock, 0, "hvwfc", timeout);
 
 	if (c->done > 0) {
 		c->done--;

@@ -29,19 +29,14 @@
 #ifndef _VMBUS_CHANVAR_H_
 #define _VMBUS_CHANVAR_H_
 
-#include <sys/param.h>
-#include <sys/callout.h>
-#include <sys/lock.h>
-#include <sys/mutex.h>
-#include <sys/queue.h>
-#include <sys/sysctl.h>
-#include <sys/sx.h>
-#include <sys/taskqueue.h>
+#include <include/hyperv.h>
+#include <include/vmbus.h>
+#include <vmbus/vmbus_brvar.h>
 
-#include <dev/hyperv/include/hyperv.h>
-#include <dev/hyperv/include/hyperv_busdma.h>
-#include <dev/hyperv/include/vmbus.h>
-#include <dev/hyperv/vmbus/vmbus_brvar.h>
+// #include <dev/hyperv/include/hyperv.h>
+// #include <dev/hyperv/include/hyperv_busdma.h>
+// #include <dev/hyperv/include/vmbus.h>
+// #include <dev/hyperv/vmbus/vmbus_brvar.h>
 
 struct vmbus_channel {
 	/*
@@ -57,11 +52,13 @@ struct vmbus_channel {
 	 */
 	struct vmbus_rxbr		ch_rxbr;
 
-	struct taskqueue		*ch_tq;
-	struct task			ch_task;
-	struct task			ch_poll_task;
+	// struct taskqueue		*ch_tq;
+	// struct task			ch_task;
+	struct uk_thread		*ch_task;
+	// struct task			ch_poll_task;
+	struct uk_thread		*ch_poll_task;
 	sbintime_t			ch_poll_intvl;
-	struct callout			ch_poll_timeo;
+	// struct callout			ch_poll_timeo;
 	vmbus_chan_callback_t		ch_cb;
 	void				*ch_cbarg;
 
@@ -99,7 +96,7 @@ struct vmbus_channel {
 	 */
 
 	struct hyperv_mon_param		*ch_monprm;
-	struct hyperv_dma		ch_monprm_dma;
+	// struct hyperv_dma		ch_monprm_dma;
 
 	uint32_t			ch_id;		/* channel id */
 	device_t			ch_dev;
@@ -119,25 +116,28 @@ struct vmbus_channel {
 	 * channel.
 	 */
 	struct mtx			ch_subchan_lock;
-	TAILQ_HEAD(, vmbus_channel)	ch_subchans;
+	// TAILQ_HEAD(, vmbus_channel)	ch_subchans;
+	UK_TAILQ_HEAD(, struct vmbus_channel)	ch_subchans;
+
 	int				ch_subchan_cnt;
 
 	/* If this is a sub-channel */
-	TAILQ_ENTRY(vmbus_channel)	ch_sublink;	/* sub-channel link */
+	// TAILQ_ENTRY(vmbus_channel)	ch_sublink;	/* sub-channel link */
+	UK_TAILQ_ENTRY(struct vmbus_channel)	ch_sublink;	/* sub-channel link */
 	struct vmbus_channel		*ch_prichan;	/* owner primary chan */
 
 	void				*ch_bufring;	/* TX+RX bufrings */
-	struct hyperv_dma		ch_bufring_dma;
+	// struct hyperv_dma		ch_bufring_dma;
 	uint32_t			ch_bufring_gpadl;
 
-	struct task			ch_attach_task;	/* run in ch_mgmt_tq */
-	struct task			ch_detach_task;	/* run in ch_mgmt_tq */
-	struct taskqueue		*ch_mgmt_tq;
+	// struct task			ch_attach_task;	/* run in ch_mgmt_tq */
+	// struct task			ch_detach_task;	/* run in ch_mgmt_tq */
+	// struct taskqueue		*ch_mgmt_tq;
 
 	/* If this is a primary channel */
-	TAILQ_ENTRY(vmbus_channel)	ch_prilink;	/* primary chan link */
+	TAILQ_ENTRY(struct vmbus_channel)	ch_prilink;	/* primary chan link */
 
-	TAILQ_ENTRY(vmbus_channel)	ch_link;	/* channel link */
+	TAILQ_ENTRY(struct vmbus_channel)	ch_link;	/* channel link */
 	uint32_t			ch_subidx;	/* subchan index */
 	volatile uint32_t		ch_stflags;	/* atomic-op */
 							/* VMBUS_CHAN_ST_ */
@@ -155,7 +155,7 @@ struct vmbus_channel {
 	bool				ch_is_hvs;
 	uint8_t				ch_hvs_conn_from_host;
 
-	struct sysctl_ctx_list		ch_sysctl_ctx;
+	// struct sysctl_ctx_list		ch_sysctl_ctx;
 } __aligned(CACHE_LINE_SIZE);
 
 #define VMBUS_CHAN_ISPRIMARY(chan)	((chan)->ch_subidx == 0)

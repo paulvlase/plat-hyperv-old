@@ -448,7 +448,7 @@ hv_kbd_fini(hv_kbd_sc *sc)
 		STAILQ_REMOVE_HEAD(&sc->ks_queue, slink);
 		free(ksi, M_DEVBUF);
 	}
-	mtx_destroy(&sc->ks_mtx);
+	// mtx_destroy(&sc->ks_mtx);
 }
 
 static void

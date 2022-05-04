@@ -29,10 +29,20 @@
 #ifndef _VMBUS_REG_H_
 #define _VMBUS_REG_H_
 
-#include <sys/param.h>
-#include <dev/hyperv/include/hyperv.h> /* XXX for hyperv_guid */
-#include <dev/hyperv/include/vmbus.h>
-#include <dev/hyperv/vmbus/hyperv_reg.h>
+#include <inttypes.h>
+#include <uk/assert.h>
+#include <include/hyperv.h> /* XXX for hyperv_guid */
+#include <include/vmbus.h>
+#include <vmbus/hyperv_reg.h>
+
+
+// #include <sys/param.h>
+// #include <dev/hyperv/include/hyperv.h> /* XXX for hyperv_guid */
+// #include <dev/hyperv/include/vmbus.h>
+// #include <dev/hyperv/vmbus/hyperv_reg.h>
+
+typedef unsigned int    u_int;
+typedef unsigned long    u_long;
 
 /*
  * Hyper-V SynIC message format.
@@ -49,7 +59,7 @@ struct vmbus_message {
 	uint64_t	msg_id;
 	uint8_t		msg_data[VMBUS_MSG_DSIZE_MAX];
 } __packed;
-CTASSERT(sizeof(struct vmbus_message) == VMBUS_MSG_SIZE);
+UK_CTASSERT(sizeof(struct vmbus_message) == VMBUS_MSG_SIZE);
 
 #define VMBUS_MSGFLAG_PENDING		0x01
 
@@ -71,7 +81,7 @@ CTASSERT(sizeof(struct vmbus_message) == VMBUS_MSG_SIZE);
 struct vmbus_evtflags {
 	u_long		evt_flags[VMBUS_EVTFLAGS_MAX];
 } __packed;
-CTASSERT(sizeof(struct vmbus_evtflags) == VMBUS_EVTFLAGS_SIZE);
+UK_CTASSERT(sizeof(struct vmbus_evtflags) == VMBUS_EVTFLAGS_SIZE);
 
 /*
  * Hyper-V Monitor Notification Facility
@@ -99,7 +109,7 @@ struct vmbus_mnf {
 			mnf_param[VMBUS_MONTRIGS_MAX][VMBUS_MONTRIG_LEN];
 	uint8_t		mnf_rsvd4[1984];
 } __packed;
-CTASSERT(sizeof(struct vmbus_mnf) == PAGE_SIZE);
+UK_CTASSERT(sizeof(struct vmbus_mnf) == __PAGE_SIZE);
 
 /*
  * Buffer ring
@@ -177,7 +187,7 @@ struct vmbus_bufring {
 
 	uint8_t			br_data[];
 } __packed;
-CTASSERT(sizeof(struct vmbus_bufring) == PAGE_SIZE);
+UK_CTASSERT(sizeof(struct vmbus_bufring) == __PAGE_SIZE);
 
 /*
  * Channel
@@ -192,6 +202,7 @@ CTASSERT(sizeof(struct vmbus_bufring) == PAGE_SIZE);
 
 #define VMBUS_CHANPKT_SIZE_ALIGN	(1 << VMBUS_CHANPKT_SIZE_SHIFT)
 
+#if 0
 #define VMBUS_CHANPKT_SETLEN(pktlen, len)		\
 do {							\
 	(pktlen) = (len) >> VMBUS_CHANPKT_SIZE_SHIFT;	\
@@ -202,24 +213,25 @@ do {							\
 
 #define VMBUS_CHANPKT_HLEN_MIN		\
 	(sizeof(struct vmbus_chanpkt_hdr) >> VMBUS_CHANPKT_SIZE_SHIFT)
+#endif
 
-struct vmbus_chanpkt {
-	struct vmbus_chanpkt_hdr cp_hdr;
-} __packed;
+// struct vmbus_chanpkt {
+// 	struct vmbus_chanpkt_hdr cp_hdr;
+// } __packed;
 
-struct vmbus_chanpkt_sglist {
-	struct vmbus_chanpkt_hdr cp_hdr;
-	uint32_t	cp_rsvd;
-	uint32_t	cp_gpa_cnt;
-	struct vmbus_gpa cp_gpa[];
-} __packed;
+// struct vmbus_chanpkt_sglist {
+// 	struct vmbus_chanpkt_hdr cp_hdr;
+// 	uint32_t	cp_rsvd;
+// 	uint32_t	cp_gpa_cnt;
+// 	struct vmbus_gpa cp_gpa[];
+// } __packed;
 
-struct vmbus_chanpkt_prplist {
-	struct vmbus_chanpkt_hdr cp_hdr;
-	uint32_t	cp_rsvd;
-	uint32_t	cp_range_cnt;
-	struct vmbus_gpa_range cp_range[];
-} __packed;
+// struct vmbus_chanpkt_prplist {
+// 	struct vmbus_chanpkt_hdr cp_hdr;
+// 	uint32_t	cp_rsvd;
+// 	uint32_t	cp_range_cnt;
+// 	struct vmbus_gpa_range cp_range[];
+// } __packed;
 
 /*
  * Channel messages
@@ -278,88 +290,88 @@ struct vmbus_chanmsg_chrequest {
 	struct vmbus_chanmsg_hdr chm_hdr;
 } __packed;
 
-/* VMBUS_CHANMSG_TYPE_DISCONNECT */
-struct vmbus_chanmsg_disconnect {
-	struct vmbus_chanmsg_hdr chm_hdr;
-} __packed;
+// /* VMBUS_CHANMSG_TYPE_DISCONNECT */
+// struct vmbus_chanmsg_disconnect {
+// 	struct vmbus_chanmsg_hdr chm_hdr;
+// } __packed;
 
-/* VMBUS_CHANMSG_TYPE_TL_CONN */
-/* Hyper-V socket guest connect request */
-struct vmbus_chanmsg_tl_connect {
-	struct vmbus_chanmsg_hdr chm_hdr;
-	struct hyperv_guid guest_endpoint_id;
-	struct hyperv_guid host_service_id;
-} __packed;
+// /* VMBUS_CHANMSG_TYPE_TL_CONN */
+// /* Hyper-V socket guest connect request */
+// struct vmbus_chanmsg_tl_connect {
+// 	struct vmbus_chanmsg_hdr chm_hdr;
+// 	struct hyperv_guid guest_endpoint_id;
+// 	struct hyperv_guid host_service_id;
+// } __packed;
 
 
-/* VMBUS_CHANMSG_TYPE_CHOPEN */
-struct vmbus_chanmsg_chopen {
-	struct vmbus_chanmsg_hdr chm_hdr;
-	uint32_t	chm_chanid;
-	uint32_t	chm_openid;
-	uint32_t	chm_gpadl;
-	uint32_t	chm_vcpuid;
-	uint32_t	chm_txbr_pgcnt;
-#define VMBUS_CHANMSG_CHOPEN_UDATA_SIZE	120
-	uint8_t		chm_udata[VMBUS_CHANMSG_CHOPEN_UDATA_SIZE];
-} __packed;
+// /* VMBUS_CHANMSG_TYPE_CHOPEN */
+// struct vmbus_chanmsg_chopen {
+// 	struct vmbus_chanmsg_hdr chm_hdr;
+// 	uint32_t	chm_chanid;
+// 	uint32_t	chm_openid;
+// 	uint32_t	chm_gpadl;
+// 	uint32_t	chm_vcpuid;
+// 	uint32_t	chm_txbr_pgcnt;
+// #define VMBUS_CHANMSG_CHOPEN_UDATA_SIZE	120
+// 	uint8_t		chm_udata[VMBUS_CHANMSG_CHOPEN_UDATA_SIZE];
+// } __packed;
 
-/* VMBUS_CHANMSG_TYPE_CHOPEN_RESP */
-struct vmbus_chanmsg_chopen_resp {
-	struct vmbus_chanmsg_hdr chm_hdr;
-	uint32_t	chm_chanid;
-	uint32_t	chm_openid;
-	uint32_t	chm_status;
-} __packed;
+// /* VMBUS_CHANMSG_TYPE_CHOPEN_RESP */
+// struct vmbus_chanmsg_chopen_resp {
+// 	struct vmbus_chanmsg_hdr chm_hdr;
+// 	uint32_t	chm_chanid;
+// 	uint32_t	chm_openid;
+// 	uint32_t	chm_status;
+// } __packed;
 
-/* VMBUS_CHANMSG_TYPE_GPADL_CONN */
-struct vmbus_chanmsg_gpadl_conn {
-	struct vmbus_chanmsg_hdr chm_hdr;
-	uint32_t	chm_chanid;
-	uint32_t	chm_gpadl;
-	uint16_t	chm_range_len;
-	uint16_t	chm_range_cnt;
-	struct vmbus_gpa_range chm_range;
-} __packed;
+// /* VMBUS_CHANMSG_TYPE_GPADL_CONN */
+// struct vmbus_chanmsg_gpadl_conn {
+// 	struct vmbus_chanmsg_hdr chm_hdr;
+// 	uint32_t	chm_chanid;
+// 	uint32_t	chm_gpadl;
+// 	uint16_t	chm_range_len;
+// 	uint16_t	chm_range_cnt;
+// 	struct vmbus_gpa_range chm_range;
+// } __packed;
 
-#define VMBUS_CHANMSG_GPADL_CONN_PGMAX		26
-CTASSERT(__offsetof(struct vmbus_chanmsg_gpadl_conn,
-    chm_range.gpa_page[VMBUS_CHANMSG_GPADL_CONN_PGMAX]) <=
-    HYPERCALL_POSTMSGIN_DSIZE_MAX);
+// #define VMBUS_CHANMSG_GPADL_CONN_PGMAX		26
+// UK_CTASSERT(__offsetof(struct vmbus_chanmsg_gpadl_conn,
+//     chm_range.gpa_page[VMBUS_CHANMSG_GPADL_CONN_PGMAX]) <=
+//     HYPERCALL_POSTMSGIN_DSIZE_MAX);
 
-/* VMBUS_CHANMSG_TYPE_GPADL_SUBCONN */
-struct vmbus_chanmsg_gpadl_subconn {
-	struct vmbus_chanmsg_hdr chm_hdr;
-	uint32_t	chm_msgno;
-	uint32_t	chm_gpadl;
-	uint64_t	chm_gpa_page[];
-} __packed;
+// /* VMBUS_CHANMSG_TYPE_GPADL_SUBCONN */
+// struct vmbus_chanmsg_gpadl_subconn {
+// 	struct vmbus_chanmsg_hdr chm_hdr;
+// 	uint32_t	chm_msgno;
+// 	uint32_t	chm_gpadl;
+// 	uint64_t	chm_gpa_page[];
+// } __packed;
 
-#define VMBUS_CHANMSG_GPADL_SUBCONN_PGMAX	28
-CTASSERT(__offsetof(struct vmbus_chanmsg_gpadl_subconn,
-    chm_gpa_page[VMBUS_CHANMSG_GPADL_SUBCONN_PGMAX]) <=
-    HYPERCALL_POSTMSGIN_DSIZE_MAX);
+// #define VMBUS_CHANMSG_GPADL_SUBCONN_PGMAX	28
+// UK_CTASSERT(__offsetof(struct vmbus_chanmsg_gpadl_subconn,
+//     chm_gpa_page[VMBUS_CHANMSG_GPADL_SUBCONN_PGMAX]) <=
+//     HYPERCALL_POSTMSGIN_DSIZE_MAX);
 
-/* VMBUS_CHANMSG_TYPE_GPADL_CONNRESP */
-struct vmbus_chanmsg_gpadl_connresp {
-	struct vmbus_chanmsg_hdr chm_hdr;
-	uint32_t	chm_chanid;
-	uint32_t	chm_gpadl;
-	uint32_t	chm_status;
-} __packed;
+// /* VMBUS_CHANMSG_TYPE_GPADL_CONNRESP */
+// struct vmbus_chanmsg_gpadl_connresp {
+// 	struct vmbus_chanmsg_hdr chm_hdr;
+// 	uint32_t	chm_chanid;
+// 	uint32_t	chm_gpadl;
+// 	uint32_t	chm_status;
+// } __packed;
 
-/* VMBUS_CHANMSG_TYPE_CHCLOSE */
-struct vmbus_chanmsg_chclose {
-	struct vmbus_chanmsg_hdr chm_hdr;
-	uint32_t	chm_chanid;
-} __packed;
+// /* VMBUS_CHANMSG_TYPE_CHCLOSE */
+// struct vmbus_chanmsg_chclose {
+// 	struct vmbus_chanmsg_hdr chm_hdr;
+// 	uint32_t	chm_chanid;
+// } __packed;
 
-/* VMBUS_CHANMSG_TYPE_GPADL_DISCONN */
-struct vmbus_chanmsg_gpadl_disconn {
-	struct vmbus_chanmsg_hdr chm_hdr;
-	uint32_t	chm_chanid;
-	uint32_t	chm_gpadl;
-} __packed;
+// /* VMBUS_CHANMSG_TYPE_GPADL_DISCONN */
+// struct vmbus_chanmsg_gpadl_disconn {
+// 	struct vmbus_chanmsg_hdr chm_hdr;
+// 	uint32_t	chm_chanid;
+// 	uint32_t	chm_gpadl;
+// } __packed;
 
 /* VMBUS_CHANMSG_TYPE_CHFREE */
 struct vmbus_chanmsg_chfree {
@@ -417,7 +429,7 @@ struct vmbus_chanmsg_choffer {
 	uint16_t	chm_flags2;
 	uint32_t	chm_connid;
 } __packed;
-CTASSERT(sizeof(struct vmbus_chanmsg_choffer) <= VMBUS_MSG_DSIZE_MAX);
+UK_CTASSERT(sizeof(struct vmbus_chanmsg_choffer) <= VMBUS_MSG_DSIZE_MAX);
 
 /* Server Flag */
 #define VMBUS_CHAN_TLNPI_PROVIDER_OFFER			0x2000

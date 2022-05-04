@@ -33,10 +33,13 @@
 #ifndef _HYPERV_H_
 #define _HYPERV_H_
 
-#ifdef _KERNEL
+#include <uk/essentials.h>
+#include <hyperv/bsd_layer.h>
 
-#include <sys/param.h>
-#include <sys/systm.h>
+// #ifdef _KERNEL
+
+// #include <sys/param.h>
+// #include <sys/systm.h>
 
 #define MSR_HV_TIME_REF_COUNT		0x40000020
 
@@ -56,9 +59,18 @@
 #define HYPERV_TIMER_NS_FACTOR		100ULL
 #define HYPERV_TIMER_FREQ		(NANOSEC / HYPERV_TIMER_NS_FACTOR)
 
-#endif	/* _KERNEL */
+// #endif	/* _KERNEL */
 
 #define HYPERV_REFTSC_DEVNAME		"hv_tsc"
+
+// #ifdef PAE
+typedef uint64_t bus_addr_t;
+// #else
+// typedef uint32_t bus_addr_t;
+// #endif
+typedef uint32_t bus_size_t;
+
+
 
 /*
  * Hyper-V Reference TSC
@@ -68,12 +80,12 @@ struct hyperv_reftsc {
 	volatile uint32_t		tsc_rsvd1;
 	volatile uint64_t		tsc_scale;
 	volatile int64_t		tsc_ofs;
-} __packed __aligned(PAGE_SIZE);
-#ifdef CTASSERT
-CTASSERT(sizeof(struct hyperv_reftsc) == PAGE_SIZE);
+} __packed __align(__PAGE_SIZE);
+#ifdef UK_CTASSERT
+UK_CTASSERT(sizeof(struct hyperv_reftsc) == __PAGE_SIZE);
 #endif
 
-#ifdef _KERNEL
+// #ifdef _KERNEL
 
 struct hyperv_guid {
 	uint8_t				hv_guid[16];
@@ -93,12 +105,17 @@ int			hyperv_guid2str(const struct hyperv_guid *, char *,
 extern hyperv_tc64_t	hyperv_tc64;
 extern u_int		hyperv_features;	/* CPUID_HV_MSR_ */
 extern u_int		hyperv_ver_major;
+u_int hyperv_get_timecount();
 
 /*
  * Vmbus version after negotiation with host.
  */
 extern uint32_t		vmbus_current_version;
 
-#endif	/* _KERNEL */
+// #endif	/* _KERNEL */
+
+void hyperv_init(void *dummy __unused);
+
+void *hyperv_mem_alloc(struct uk_alloc *a, size_t size);
 
 #endif  /* _HYPERV_H_ */

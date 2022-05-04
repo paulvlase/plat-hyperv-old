@@ -31,10 +31,9 @@
 #ifndef _VMBUS_BRVAR_H_
 #define _VMBUS_BRVAR_H_
 
-#include <sys/param.h>
-#include <sys/lock.h>
-#include <sys/mutex.h>
-#include <sys/_iovec.h>
+#include <vmbus/vmbus_reg.h>
+
+#include <hyperv/bsd_layer.h>
 
 struct vmbus_br {
 	struct vmbus_bufring	*vbr;

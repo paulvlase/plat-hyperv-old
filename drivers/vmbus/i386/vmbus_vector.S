@@ -26,11 +26,46 @@
  * $FreeBSD$
  */
 
-#include "assym.inc"
+#include <x86/traps.h>
 
-#include <machine/psl.h>
-#include <machine/asmacros.h>
-#include <machine/specialreg.h>
+#define ENTRY(X)     .global X ; .type X, @function ; X:
+
+.macro PUSH_CALLER_SAVE
+	pushq %rdi
+	pushq %rsi
+	pushq %rdx
+	pushq %rcx
+	pushq %rax
+	pushq %r8
+	pushq %r9
+	pushq %r10
+	pushq %r11
+	pushq %rbx
+	pushq %rbp
+	pushq %r12
+	pushq %r13
+	pushq %r14
+	pushq %r15
+.endm
+
+.macro POP_CALLER_SAVE
+	popq %r15
+	popq %r14
+	popq %r13
+	popq %r12
+	popq %rbp
+	popq %rbx
+	popq %r11
+	popq %r10
+	popq %r9
+	popq %r8
+	popq %rax
+	popq %rcx
+	popq %rdx
+	popq %rsi
+	popq %rdi
+.endm
+
 
 /*
  * This is the Hyper-V vmbus channel direct callback interrupt.
@@ -39,16 +74,19 @@
  * Note that this file is not assembled directly, it is included into
  * i386/exception.s.
  */
-	.text
-	SUPERALIGN_TEXT
-IDTVEC(vmbus_isr_pti)
-IDTVEC(vmbus_isr)
-	PUSH_FRAME
-	SET_KERNEL_SREGS
+
+ENTRY(vmbus_isr)
 	cld
-	KENTER
-	pushl	%esp
-	mov	$vmbus_handle_intr, %eax
-	call	*%eax
-	add	$4, %esp
-	jmp	doreti
+
+	pushq $0                            /* no error code */
+	PUSH_CALLER_SAVE
+	subq $__REGS_PAD_SIZE, %rsp         /* we have some padding */
+
+	call vmbus_handle_intr
+
+	addq $__REGS_PAD_SIZE, %rsp         /* we have some padding */
+	POP_CALLER_SAVE
+	addq $8, %rsp
+
+	iretq
+

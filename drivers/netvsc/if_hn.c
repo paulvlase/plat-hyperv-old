@@ -5481,9 +5481,9 @@ hn_tx_ring_destroy(struct hn_tx_ring *txr)
 		buf_ring_free(txr->hn_mbuf_br, M_DEVBUF);
 
 #ifndef HN_USE_TXDESC_BUFRING
-	mtx_destroy(&txr->hn_txlist_spin);
+	// mtx_destroy(&txr->hn_txlist_spin);
 #endif
-	mtx_destroy(&txr->hn_tx_lock);
+	// mtx_destroy(&txr->hn_tx_lock);
 }
 
 static int

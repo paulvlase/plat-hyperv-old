@@ -29,16 +29,29 @@
 #ifndef _VMBUS_XACT_H_
 #define _VMBUS_XACT_H_
 
-#include <sys/param.h>
-#include <sys/bus.h>
+#include <inttypes.h>
+#include <stddef.h>
+
+// #include <sys/param.h>
+// #include <sys/bus.h>
+
+// #ifdef PAE
+typedef uint64_t bus_addr_t;
+// #else
+// typedef uint32_t bus_addr_t;
+// #endif
+typedef uint32_t bus_size_t;
 
 struct vmbus_xact;
 struct vmbus_xact_ctx;
 
-struct vmbus_xact_ctx	*vmbus_xact_ctx_create(bus_dma_tag_t dtag,
+// struct vmbus_xact_ctx	*vmbus_xact_ctx_create(bus_dma_tag_t dtag,
+// 			    size_t req_size, size_t resp_size,
+// 			    size_t priv_size);
+struct vmbus_xact_ctx	*vmbus_xact_ctx_create(struct uk_alloc *a,
 			    size_t req_size, size_t resp_size,
 			    size_t priv_size);
-void			vmbus_xact_ctx_destroy(struct vmbus_xact_ctx *ctx);
+// void			vmbus_xact_ctx_destroy(struct vmbus_xact_ctx *ctx);
 bool			vmbus_xact_ctx_orphan(struct vmbus_xact_ctx *ctx);
 
 struct vmbus_xact	*vmbus_xact_get(struct vmbus_xact_ctx *ctx,
@@ -53,12 +66,12 @@ void			vmbus_xact_activate(struct vmbus_xact *xact);
 void			vmbus_xact_deactivate(struct vmbus_xact *xact);
 const void		*vmbus_xact_wait(struct vmbus_xact *xact,
 			    size_t *resp_len);
-const void		*vmbus_xact_busywait(struct vmbus_xact *xact,
-			    size_t *resp_len);
-const void		*vmbus_xact_poll(struct vmbus_xact *xact,
-			    size_t *resp_len);
-void			vmbus_xact_wakeup(struct vmbus_xact *xact,
-			    const void *data, size_t dlen);
+// const void		*vmbus_xact_busywait(struct vmbus_xact *xact,
+// 			    size_t *resp_len);
+// const void		*vmbus_xact_poll(struct vmbus_xact *xact,
+// 			    size_t *resp_len);
+// void			vmbus_xact_wakeup(struct vmbus_xact *xact,
+// 			    const void *data, size_t dlen);
 void			vmbus_xact_ctx_wakeup(struct vmbus_xact_ctx *ctx,
 			    const void *data, size_t dlen);
 

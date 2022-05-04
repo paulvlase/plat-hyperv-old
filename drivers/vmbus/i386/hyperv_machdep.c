@@ -24,11 +24,8 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
-
-#include <sys/param.h>
-#include <dev/hyperv/vmbus/hyperv_machdep.h>
+#include <inttypes.h>
+#include <vmbus/hyperv_machdep.h>
 
 uint64_t
 hypercall_md(volatile void *hc_addr, uint64_t in_val,
